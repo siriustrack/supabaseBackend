@@ -3,6 +3,8 @@ import { getSelectionString } from "../../utils/getSelectionString";
 import { fillingInBuyerData } from "./fillingInBuyerData";
 import { TransactionData } from "../../models/TransactionData";
 import { BuyerData } from "../../models/BuyerData";
+import redisClient from "../../config/redisClient"; // Importa o Redis
+import { createHash } from "crypto"; // Para criar hash do corpo da requisição
 
 export type ConditionType = "OU" | "E";
 
@@ -18,14 +20,55 @@ export async function abstraction({
   if (req.method !== "POST") {
     throw new Error("Método de requisição inválido. Apenas POST é permitido.");
   }
-  const method = req.method; // Ex: "POST"
-  const url = req.url; // Ex: "https://example.com/api/buyers"
 
-  // Logando a informação da URL e método
-  console.log(`Recebendo ${method} na URL: ${url}`);
+  const requestData = req.body;
+  const { projectId, userId } = requestData;
+
+  // Gera uma chave de cache única com base no projectId, userId e hash do corpo
+  const cacheKey = `${projectId}_${userId}_${createHash("md5")
+    .update(JSON.stringify(requestData))
+    .digest("hex")}`;
+
+  // Verifica se o resultado está no cache
+  const cachedResult = await redisClient.get(cacheKey);
+
+  if (cachedResult) {
+    console.log(`Cache hit para a chave ${cacheKey}`);
+    return JSON.parse(cachedResult); // Retorna o resultado cacheado
+  }
+
+  console.log(`Cache miss para a chave ${cacheKey}, processando...`);
+
+  // Aqui faz a lógica de abstração como antes...
+  const result = await processAbstraction(
+    requestData,
+    asc,
+    includeCurrencyFilter
+  ); // Função que contém o resto da lógica
+
+  // Verifica a quantidade de vendas para garantir que o cache seja válido
+  const query = supabase
+    .from("omni_sales")
+    .select("id", { count: "exact" })
+    .eq("project_id", projectId)
+    .eq("user_id", userId);
+
+  const { count } = await query;
+
+  if (count !== null) {
+    // Salva o resultado no cache sem expiração ou com expiração de 30 dias (em segundos)
+    const cacheDuration = 30 * 24 * 60 * 60; // 30 dias em segundos
+
+    await redisClient.set(cacheKey, JSON.stringify(result), {
+      EX: cacheDuration, // Remove esta linha para cache sem expiração
+    });
+  }
+
+  return result;
+}
+
+async function processAbstraction(requestData, asc, includeCurrencyFilter) {
   try {
-    const requestData = await req.body;
-
     const {
       startDate,
       endDate,
