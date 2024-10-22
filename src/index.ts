@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import { abstraction } from "./src/functions/abstractionBuyer/index";
+import { abstraction } from "./functions/abstractionBuyer/index";
 
 // Carrega as variáveis de ambiente do arquivo .env
 dotenv.config();

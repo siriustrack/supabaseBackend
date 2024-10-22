@@ -11,7 +11,7 @@ export async function abstraction({
   asc = true,
   includeCurrencyFilter = true,
 }: {
-  req: Request;
+  req: any;
   asc?: boolean;
   includeCurrencyFilter?: boolean;
 }) {
