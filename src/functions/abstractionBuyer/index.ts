@@ -3,7 +3,7 @@ import { getSelectionString } from "../../utils/getSelectionString";
 import { fillingInBuyerData } from "./fillingInBuyerData";
 import { TransactionData } from "../../models/TransactionData";
 import { BuyerData } from "../../models/BuyerData";
-import redisClient from "../../config/redisClient"; // Importa o Redis
+import { redisClient } from "../../config/redisClient"; // Importa o Redis
 import { createHash } from "crypto"; // Para criar hash do corpo da requisição
 
 export type ConditionType = "OU" | "E";
