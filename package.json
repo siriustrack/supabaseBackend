@@ -1,11 +1,11 @@
 {
   "name": "abstraction-buyer",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "build/index.js",
   "license": "MIT",
   "scripts": {
     "build": "yarn tsc",
-    "start": "node dist/functions/abstractionBuyer/index.js",
+    "start": "node build/functions/abstractionBuyer/index.js",
     "preinstall": "yarn config set enableGlobalCache false"
   },
   "dependencies": {
