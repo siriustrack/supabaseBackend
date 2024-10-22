@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "license": "MIT",
-  "type": "module",
   "scripts": {
     "build": "yarn tsc",
-    "start": "node dist/functions/abstractionBuyer/index.js"
+    "start": "node dist/functions/abstractionBuyer/index.js",
+    "preinstall": "yarn config set enableGlobalCache false"
   },
   "dependencies": {
     "@supabase/supabase-js": "^1.29.0",
@@ -14,5 +14,9 @@
   },
   "devDependencies": {
     "typescript": "^4.5.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "yarn": ">=1.22.0"
   }
 }
