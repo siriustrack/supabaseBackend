@@ -8,6 +8,24 @@ import { createHash } from "crypto"; // Para criar hash do corpo da requisição
 
 export type ConditionType = "OU" | "E";
 
+// Mapa de promessas em andamento
+const promisePool: { [key: string]: Promise<any> } = {};
+
+// Função auxiliar para verificar o `count` atual das vendas no Supabase
+async function getSalesCount(
+  projectId: string,
+  userId: string
+): Promise<number | null> {
+  const query = supabase
+    .from("omni_sales")
+    .select("id", { count: "exact" })
+    .eq("project_id", projectId)
+    .eq("user_id", userId);
+
+  const { count } = await query;
+  return count;
+}
+
 export async function abstraction({
   req,
   asc = true,
@@ -29,42 +47,68 @@ export async function abstraction({
     .update(JSON.stringify(requestData))
     .digest("hex")}`;
 
-  // Verifica se o resultado está no cache
+  // Verifica se já existe uma promessa em andamento para essa chave
+  if (promisePool[cacheKey]) {
+    console.log(`Fila de requisições em andamento para a chave ${cacheKey}`);
+    return promisePool[cacheKey]; // Retorna a Promise em andamento
+  }
+
+  // Verifica se o resultado já está no cache
   const cachedResult = await redisClient.get(cacheKey);
 
   if (cachedResult) {
     console.log(`Cache hit para a chave ${cacheKey}`);
-    return JSON.parse(cachedResult); // Retorna o resultado cacheado
+
+    // Verifica a quantidade de vendas atual para garantir que o cache é válido
+    const currentSalesCount = await getSalesCount(projectId, userId);
+    const cachedData = JSON.parse(cachedResult);
+
+    if (cachedData.count === currentSalesCount) {
+      console.log(`Cache válido para a chave ${cacheKey}`);
+      return cachedData.result; // Serve o cache se o `count` bater
+    } else {
+      console.log(`Cache inválido (count diferente), ignorando cache...`);
+    }
   }
 
-  console.log(`Cache miss para a chave ${cacheKey}, processando...`);
+  // Se não tem cache válido ou se a requisição é nova, cria uma nova promessa e a salva no pool
+  console.log(
+    `Cache miss ou cache inválido para a chave ${cacheKey}, processando...`
+  );
+  promisePool[cacheKey] = (async () => {
+    try {
+      // Processa a abstração como antes
+      const result = await processAbstraction(
+        requestData,
+        asc,
+        includeCurrencyFilter
+      ); // Função que contém o resto da lógica
 
-  // Aqui faz a lógica de abstração como antes...
-  const result = await processAbstraction(
-    requestData,
-    asc,
-    includeCurrencyFilter
-  ); // Função que contém o resto da lógica
+      // Verifica a quantidade de vendas para garantir que o cache seja válido
+      const currentSalesCount = await getSalesCount(projectId, userId);
 
-  // Verifica a quantidade de vendas para garantir que o cache seja válido
-  const query = supabase
-    .from("omni_sales")
-    .select("id", { count: "exact" })
-    .eq("project_id", projectId)
-    .eq("user_id", userId);
+      if (currentSalesCount !== null) {
+        // Salva o resultado no cache com o `count` atual para futuras verificações
+        const cacheData = {
+          count: currentSalesCount,
+          result: result,
+        };
 
-  const { count } = await query;
+        const cacheDuration = 30 * 24 * 60 * 60; // 30 dias em segundos
+        await redisClient.set(cacheKey, JSON.stringify(cacheData), {
+          EX: cacheDuration,
+        });
+      }
 
-  if (count !== null) {
-    // Salva o resultado no cache sem expiração ou com expiração de 30 dias (em segundos)
-    const cacheDuration = 30 * 24 * 60 * 60; // 30 dias em segundos
+      return result;
+    } finally {
+      // Remove a promessa do pool ao final
+      delete promisePool[cacheKey];
+    }
+  })();
 
-    await redisClient.set(cacheKey, JSON.stringify(result), {
-      EX: cacheDuration, // Remove esta linha para cache sem expiração
-    });
-  }
-
-  return result;
+  // Retorna a promessa que será resolvida futuramente
+  return promisePool[cacheKey];
 }
 
 async function processAbstraction(requestData, asc, includeCurrencyFilter) {
