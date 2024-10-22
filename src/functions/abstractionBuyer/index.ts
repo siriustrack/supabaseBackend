@@ -24,7 +24,7 @@ export async function abstraction({
   // Logando a informação da URL e método
   console.log(`Recebendo ${method} na URL: ${url}`);
   try {
-    const requestData = await req.json();
+    const requestData = await req.body;
 
     const {
       startDate,
