@@ -1,0 +1,20 @@
+version: "3"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}" # Usa a variável PORT ou 3000 como padrão
+    depends_on:
+      - redis # Garante que o Redis seja iniciado antes da aplicação
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379} # Usa a variável REDIS_URL ou valor padrão
+      - PORT=${PORT:-3000} # Usa a variável PORT ou 3000 como padrão
+    volumes:
+      - .:/app # Monta o diretório atual no container (útil para desenvolvimento)
+
+  redis:
+    image: redis:alpine # Usa a imagem oficial do Redis
+    ports:
+      - "6379:6379" # A porta do Redis pode ser fixa, pois o Redis escutará apenas na rede interna do Docker
