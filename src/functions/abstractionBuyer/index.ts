@@ -42,14 +42,22 @@ export async function abstraction({
   const requestData = req.body;
   const { projectId, userId } = requestData;
 
+  console.log(
+    `Iniciando requisição para projectId: ${projectId}, userId: ${userId}`
+  );
+
   // Gera uma chave de cache única com base no projectId, userId e hash do corpo
   const cacheKey = `${projectId}_${userId}_${createHash("md5")
     .update(JSON.stringify(requestData))
     .digest("hex")}`;
 
+  console.log(`Chave de cache gerada: ${cacheKey}`);
+
   // Verifica se já existe uma promessa em andamento para essa chave
   if (promisePool[cacheKey]) {
-    console.log(`Fila de requisições em andamento para a chave ${cacheKey}`);
+    console.log(
+      `Requisição já em andamento para a chave ${cacheKey}. Retornando a Promise existente.`
+    );
     return promisePool[cacheKey]; // Retorna a Promise em andamento
   }
 
@@ -57,25 +65,33 @@ export async function abstraction({
   const cachedResult = await redisClient.get(cacheKey);
 
   if (cachedResult) {
-    console.log(`Cache hit para a chave ${cacheKey}`);
+    console.log(`Cache encontrado para a chave ${cacheKey}`);
 
     // Verifica a quantidade de vendas atual para garantir que o cache é válido
     const currentSalesCount = await getSalesCount(projectId, userId);
     const cachedData = JSON.parse(cachedResult);
 
     if (cachedData.count === currentSalesCount) {
-      console.log(`Cache válido para a chave ${cacheKey}`);
+      console.log(
+        `Cache válido para a chave ${cacheKey}. Retornando dados do cache.`
+      );
       return cachedData.result; // Serve o cache se o `count` bater
     } else {
-      console.log(`Cache inválido (count diferente), ignorando cache...`);
+      console.log(
+        `Cache inválido para a chave ${cacheKey} (count diferente). Ignorando cache.`
+      );
     }
+  } else {
+    console.log(`Nenhum cache encontrado para a chave ${cacheKey}.`);
   }
 
   // Se não tem cache válido ou se a requisição é nova, cria uma nova promessa e a salva no pool
   console.log(
-    `Cache miss ou cache inválido para a chave ${cacheKey}, processando...`
+    `Cache miss ou cache inválido para a chave ${cacheKey}, processando a requisição...`
   );
+
   promisePool[cacheKey] = (async () => {
+    console.log(`Requisição adicionada ao pool de promessas: ${cacheKey}`);
     try {
       // Processa a abstração como antes
       const result = await processAbstraction(
@@ -88,6 +104,8 @@ export async function abstraction({
       const currentSalesCount = await getSalesCount(projectId, userId);
 
       if (currentSalesCount !== null) {
+        console.log(`Salvando resultado no cache para a chave ${cacheKey}`);
+
         // Salva o resultado no cache com o `count` atual para futuras verificações
         const cacheData = {
           count: currentSalesCount,
@@ -98,16 +116,28 @@ export async function abstraction({
         await redisClient.set(cacheKey, JSON.stringify(cacheData), {
           EX: cacheDuration,
         });
+
+        console.log(`Resultado salvo no cache por ${cacheDuration} segundos.`);
+      } else {
+        console.log(
+          `Não foi possível obter o count atual de vendas. Cache não salvo.`
+        );
       }
 
       return result;
     } finally {
+      console.log(
+        `Requisição finalizada. Removendo promessa do pool: ${cacheKey}`
+      );
       // Remove a promessa do pool ao final
       delete promisePool[cacheKey];
     }
   })();
 
   // Retorna a promessa que será resolvida futuramente
+  console.log(
+    `Retornando a Promise da requisição em andamento para a chave ${cacheKey}`
+  );
   return promisePool[cacheKey];
 }
 
@@ -262,8 +292,8 @@ async function processAbstraction(requestData, asc, includeCurrencyFilter) {
     const buyersData: {
       [email: string]: BuyerData;
     } = {};
-    console.log("buyerData:");
-    console.log(buyersData);
+    //console.log("buyerData:");
+    console.log("Entrando em fillingInBuyerData");
     const filteredBuyersData = fillingInBuyerData({
       specifiedData: allData,
       buyersData,
