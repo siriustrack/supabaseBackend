@@ -14,11 +14,7 @@ app.use(express.json());
 // Rota principal que aponta para o endpoint abstractionBuyer
 app.post("/abstractionBuyer", async (req, res) => {
   try {
-    const result = await abstraction({
-      req,
-      asc: true,
-      includeCurrencyFilter: true,
-    });
+    const result = await abstraction({ req });
     res.status(200).json(result);
   } catch (error) {
     console.error(error);
