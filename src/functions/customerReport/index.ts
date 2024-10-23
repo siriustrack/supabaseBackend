@@ -1,9 +1,9 @@
 import { fetchAbstractionData } from "../../utils/fetchAbstractionData";
+import { abstraction } from "../abstractionBuyer";
 
 export async function customerReport(req: any) {
   try {
-    console.log("Corpo da requisição:", req.body);
-    const { filteredBuyersData } = await fetchAbstractionData(req);
+    const { filteredBuyersData } = await abstraction(req);
 
     let allTransactions = 0;
     let buyersProgress = 0;
