@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import { abstraction } from "./functions/abstractionBuyer/index";
+import { customerReport } from "./functions/customerReport/index";
 
 // Carrega as variáveis de ambiente do arquivo .env
 dotenv.config();
@@ -15,6 +16,16 @@ app.use(express.json());
 app.post("/abstractionBuyer", async (req, res) => {
   try {
     const result = await abstraction({ req });
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/customerReport", async (req, res) => {
+  try {
+    const result = await customerReport(req);
     res.status(200).json(result);
   } catch (error) {
     console.error(error);
