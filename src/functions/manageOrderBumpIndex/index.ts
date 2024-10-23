@@ -22,7 +22,10 @@ interface ErrorResponse {
 }
 
 // Função principal para lidar com a requisição
-async function manageOrderBumpIndex(req: any, res: any): Promise<Response> {
+export async function manageOrderBumpIndex(
+  req: any,
+  res: any
+): Promise<Response> {
   try {
     const url = new URL(req.url);
     const params = url.searchParams;
@@ -88,7 +91,7 @@ async function manageOrderBumpIndex(req: any, res: any): Promise<Response> {
             offers_ids: offersIds || null,
           },
           {
-            onConflict: ["project_id", "user_id", "product_id"],
+            onConflict: "project_id, user_id, product_id",
             ignoreDuplicates: false,
           }
         );
@@ -146,11 +149,12 @@ async function manageOrderBumpIndex(req: any, res: any): Promise<Response> {
       } else {
         throw new Error("O parâmetro 'condition' é inválido.");
       }
-      
+
       const response = result.data;
 
       // Usando res.json para retornar a resposta ao cliente
-    return res.status(200).json(response);
+      return res.status(200).json(response);
+    }
   } catch (error) {
     console.error("Erro ao processar customerReport:", error);
 
@@ -160,4 +164,3 @@ async function manageOrderBumpIndex(req: any, res: any): Promise<Response> {
     });
   }
 }
-
