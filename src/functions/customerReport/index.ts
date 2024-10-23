@@ -4,6 +4,7 @@ export async function customerReport(req: any) {
   try {
     const { filteredBuyersData } = await abstraction({ req });
     console.log("Dados retornados pela abstraction:", filteredBuyersData);
+
     let allTransactions = 0;
     let buyersProgress = 0;
     let buyersStopped = 0;
@@ -11,6 +12,7 @@ export async function customerReport(req: any) {
     let totalBuyers = 0;
     let totalReBuy = 0.0;
     let totalFirstBuyPurchases = 0.0;
+    // Variáveis para novos cálculos
     let totalFirstBuyTicket = 0.0;
     let firstBuyCount = 0;
     let totalRebuyTicket = 0.0;
@@ -92,6 +94,7 @@ export async function customerReport(req: any) {
       averageFirstBuyTicket: averageFirstBuyTicket.toFixed(2),
       averageRebuyTicket: averageRebuyTicket.toFixed(2),
     };
+
     console.log(`Response: ${JSON.stringify(response)}`);
     return new Response(JSON.stringify(response), {
       headers: { "Content-Type": "application/json" },
