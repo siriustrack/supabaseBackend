@@ -1,6 +1,6 @@
 import { abstraction } from "../abstractionBuyer";
 
-export async function customerReport(req: any) {
+export async function customerReport(req: any, res: any) {
   try {
     // const { filteredBuyersData } = await abstraction({ req });
     // console.log("Dados retornados pela abstraction:", filteredBuyersData);
@@ -111,22 +111,15 @@ export async function customerReport(req: any) {
     };
 
     console.log(`Response: ${JSON.stringify(response)}`);
-    return new Response(JSON.stringify(response), {
-      headers: { "Content-Type": "application/json" },
-      status: 200,
-    });
+
+    // Usando res.json para retornar a resposta ao cliente
+    return res.status(200).json(response);
   } catch (error) {
     console.error("Erro ao processar customerReport:", error);
 
-    // Retorna um erro em formato JSON
-    return new Response(
-      JSON.stringify({
-        error: error.message || "Ocorreu um erro desconhecido",
-      }),
-      {
-        headers: { "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    // Usando res.json para retornar um erro
+    return res.status(500).json({
+      error: error.message || "Ocorreu um erro desconhecido",
+    });
   }
 }

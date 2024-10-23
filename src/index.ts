@@ -25,8 +25,7 @@ app.post("/abstractionBuyer", async (req, res) => {
 
 app.post("/customerReport", async (req, res) => {
   try {
-    const result = await customerReport(req);
-    res.status(200).json(result);
+    await customerReport(req, res); // Passando req e res para a função
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
