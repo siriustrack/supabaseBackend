@@ -2,6 +2,16 @@ import express from "express";
 import dotenv from "dotenv";
 import { abstraction } from "./functions/abstractionBuyer/index";
 import { customerReport } from "./functions/customerReport/index";
+import { customerReportDetails } from "./functions/customerReportDetails";
+import { download } from "./functions/download";
+import { Request, Response } from "express-serve-static-core";
+import { ParsedQs } from "qs";
+import { newCustomersByDay } from "./functions/newCustomersByDay";
+import { productRebuySummary } from "./functions/productRebuySummary";
+import { productReports } from "./functions/productReports";
+import { rankingLtvProducts } from "./functions/rankingLtvProducts";
+import { manageOrderBumpIndex } from "./functions/manageOrderBumpIndex";
+import { listProductsFirstBuy } from "./functions/listProductsFirstBuy";
 
 // Carrega as variáveis de ambiente do arquivo .env
 dotenv.config();
@@ -26,6 +36,78 @@ app.post("/abstractionBuyer", async (req, res) => {
 app.post("/customerReport", async (req, res) => {
   try {
     await customerReport(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/customerReportDetails", async (req, res) => {
+  try {
+    await customerReportDetails(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/download", async (req, res) => {
+  try {
+    await download(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/listProductsFirstBuy", async (req, res) => {
+  try {
+    await listProductsFirstBuy(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/manageOrderBumpIndex", async (req, res) => {
+  try {
+    await manageOrderBumpIndex(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/newCustomersByDay", async (req, res) => {
+  try {
+    await newCustomersByDay(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/productRebuySummary", async (req, res) => {
+  try {
+    await productRebuySummary(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/productReports", async (req, res) => {
+  try {
+    await productReports(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/rankingLtvProducts", async (req, res) => {
+  try {
+    await rankingLtvProducts(req, res); // Passando req e res para a função
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });

@@ -1,4 +1,4 @@
-export async function fetchAbstractionData(req: Request) {
+export async function fetchAbstractionData(req: any, res: any) {
   try {
     const requestBody = await req.body;
     console.log("Body enviado:", requestBody); // Log para depuração
