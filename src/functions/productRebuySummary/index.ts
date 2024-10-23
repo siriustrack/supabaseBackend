@@ -106,9 +106,11 @@ export async function productRebuySummary(req: any, res: any) {
 
     // Dados de resposta que serão enviados ao cliente
     const response = {
-      totalTransactions,
-      totalSumSpend,
-      totalRebuyGroupedByProducts,
+      data: {
+        totalTransactions,
+        totalSumSpend,
+        totalRebuyGroupedByProducts,
+      },
     };
 
     // Usando res.json para retornar a resposta ao cliente
