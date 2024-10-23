@@ -93,12 +93,18 @@ export async function abstraction({
   promisePool[cacheKey] = (async () => {
     console.log(`Requisição adicionada ao pool de promessas: ${cacheKey}`);
     try {
-      // Processa a abstração como antes
+      // Processa a abstração
       const result = await processAbstraction(
         requestData,
         asc,
         includeCurrencyFilter
-      ); // Função que contém o resto da lógica
+      );
+
+      // Verifica se o resultado é válido (não nulo, indefinido ou vazio)
+      if (!result || Object.keys(result).length === 0) {
+        console.log(`Resultado inválido ou vazio. Não salvando no cache.`);
+        return result; // Retorna o resultado, mesmo que seja vazio, sem salvar no cache
+      }
 
       // Verifica a quantidade de vendas para garantir que o cache seja válido
       const currentSalesCount = await getSalesCount(projectId, userId);
