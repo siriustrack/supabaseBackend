@@ -58,13 +58,13 @@ export async function download(req: any, res: any) {
 
     const { data: publicURL } = fileBucket.getPublicUrl(filePath);
 
-    const response = JSON.stringify({
+    const response = {
       allTransactions,
       allSpend,
       totalReBuy,
       totalFirstBuyPurchases,
       publicURL: publicURL.publicURL,
-    });
+    };
 
     // Usando res.json para retornar a resposta ao cliente
     return res.status(200).json(response);
