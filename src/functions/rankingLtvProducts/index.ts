@@ -85,9 +85,11 @@ export async function rankingLtvProducts(req: any, res: any) {
     });
 
     const response = {
-      totalTransactions,
-      totalSumSpend,
-      t5FirstPurchase: topPurchasesByPosition[0],
+      data: {
+        totalTransactions,
+        totalSumSpend,
+        t5FirstPurchase: topPurchasesByPosition[0],
+      },
     };
 
     // Usando res.json para retornar a resposta ao cliente
