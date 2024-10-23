@@ -93,8 +93,23 @@ export async function customerReport(req: any) {
       averageFirstBuyTicket: averageFirstBuyTicket.toFixed(2),
       averageRebuyTicket: averageRebuyTicket.toFixed(2),
     };
+    // Retorna a resposta JSON
+    return new Response(JSON.stringify(response), {
+      headers: { "Content-Type": "application/json" },
+      status: 200,
+    });
   } catch (error) {
     console.error("Erro ao processar customerReport:", error);
-    throw new Error(error.message || "Erro ao processar a requisição");
+
+    // Retorna um erro em formato JSON
+    return new Response(
+      JSON.stringify({
+        error: error.message || "Ocorreu um erro desconhecido",
+      }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 }
