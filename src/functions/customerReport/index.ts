@@ -3,7 +3,7 @@ import { abstraction } from "../abstractionBuyer";
 
 export async function customerReport(req: any) {
   try {
-    const { filteredBuyersData } = await abstraction(req);
+    const { filteredBuyersData } = await abstraction({ req });
 
     let allTransactions = 0;
     let buyersProgress = 0;
