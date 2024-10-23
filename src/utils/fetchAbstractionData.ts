@@ -1,6 +1,7 @@
 export async function fetchAbstractionData(req: Request) {
   try {
     const requestBody = await req.body;
+    console.log("Body enviado:", requestBody); // Log para depuração
 
     const headers = new Headers(req.headers);
     headers.delete("host");

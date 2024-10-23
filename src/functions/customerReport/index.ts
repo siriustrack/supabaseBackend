@@ -2,6 +2,7 @@ import { fetchAbstractionData } from "../../utils/fetchAbstractionData";
 
 export async function customerReport(req: any) {
   try {
+    console.log("Corpo da requisição:", req.body);
     const { filteredBuyersData } = await fetchAbstractionData(req);
 
     let allTransactions = 0;
