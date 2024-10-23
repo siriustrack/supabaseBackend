@@ -2,8 +2,23 @@ import { abstraction } from "../abstractionBuyer";
 
 export async function customerReport(req: any) {
   try {
-    const { filteredBuyersData } = await abstraction({ req });
-    console.log("Dados retornados pela abstraction:", filteredBuyersData);
+    // const { filteredBuyersData } = await abstraction({ req });
+    // console.log("Dados retornados pela abstraction:", filteredBuyersData);
+    // Log completo do retorno da função abstraction
+    const result = await abstraction({ req });
+
+    // Verifique se filteredBuyersData foi retornado corretamente
+    const { filteredBuyersData } = result;
+
+    // Exibir apenas o primeiro objeto de filteredBuyersData, se existir
+    if (filteredBuyersData && filteredBuyersData.length > 0) {
+      console.log(
+        "Primeiro objeto de filteredBuyersData:",
+        JSON.stringify(filteredBuyersData[0], null, 2)
+      );
+    } else {
+      console.error("Nenhum dado de compradores foi retornado.");
+    }
 
     let allTransactions = 0;
     let buyersProgress = 0;
