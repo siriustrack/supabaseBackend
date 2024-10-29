@@ -28,12 +28,12 @@ export async function download(req: any, res: any) {
         pais: buyer.pais,
         telefone: buyer.telefone,
         doc: buyer.buyerDocument,
-        totalSpend: buyer.totalSpend,
+        totalSpend: buyer.totalSpend.toFixed(2),
         totalTransactions: buyer.totalTransactions,
         daysInTheBusiness: buyer.daysInTheBusiness,
         daysWithoutBuy: buyer.daysWithoutBuy,
         averageDaysBetweenPurchases: buyer.averageDaysBetweenPurchases,
-        averageTicket: buyer.averageTicket,
+        averageTicket: buyer.averageTicket.toFixed(2),
         productList: buyer.shopList.map((item) => item.productName).join(" | "),
         allEmails: buyer.allEmails?.join(" | "),
         allPhones: buyer.allPhones?.join(" | "),
@@ -104,10 +104,7 @@ export function jsonToCSV(jsonData: any[]): string {
     .map((obj) =>
       Object.values(obj)
         .map((val) => {
-          if (typeof val === "number") {
-            // Formata o número com duas casas decimais ou outro formato desejado
-            return val.toFixed(2);
-          } else if (typeof val === "string") {
+          if (typeof val === "string") {
             return `"${val.replace(/"/g, '""')}"`;
           } else {
             return val;

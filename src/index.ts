@@ -4,14 +4,13 @@ import { abstraction } from "./functions/abstractionBuyer/index";
 import { customerReport } from "./functions/customerReport/index";
 import { customerReportDetails } from "./functions/customerReportDetails";
 import { download } from "./functions/download";
-import { Request, Response } from "express-serve-static-core";
-import { ParsedQs } from "qs";
 import { newCustomersByDay } from "./functions/newCustomersByDay";
 import { productRebuySummary } from "./functions/productRebuySummary";
 import { productReports } from "./functions/productReports";
 import { rankingLtvProducts } from "./functions/rankingLtvProducts";
 import { manageOrderBumpIndex } from "./functions/manageOrderBumpIndex";
 import { listProductsFirstBuy } from "./functions/listProductsFirstBuy";
+import { asaasSync } from "./functions/asaasSync";
 
 // Carrega as variáveis de ambiente do arquivo .env
 dotenv.config();
@@ -108,6 +107,15 @@ app.post("/productReports", async (req, res) => {
 app.post("/rankingLtvProducts", async (req, res) => {
   try {
     await rankingLtvProducts(req, res); // Passando req e res para a função
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/asaasSync", async (req, res) => {
+  try {
+    await asaasSync(req, res); // Passando req e res para a função
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
