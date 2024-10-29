@@ -6,7 +6,7 @@ export async function download(req: any, res: any) {
   try {
     const { filteredBuyersData } = await abstraction({ req });
     console.log("filteredBuyersData count:", filteredBuyersData.length);
-    const exportCsv = req.query.exportCsv === "true"; // Converte exportCsv para booleano
+    const exportCsv = req.body.exportCsv === true; // Converte exportCsv para booleano, assumindo que é enviado como booleano no JSON body
     console.log("exportCsv value:", exportCsv);
 
     let allTransactions = 0;
