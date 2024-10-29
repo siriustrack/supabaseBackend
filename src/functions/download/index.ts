@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 export async function download(req: any, res: any) {
   try {
     const { filteredBuyersData } = await abstraction({ req });
-    const { exportCsv } = req.query;
+    const exportCsv = req.query.exportCsv === "true"; // Converte exportCsv para booleano
 
     let allTransactions = 0;
     let allSpend = 0.0;
@@ -58,7 +58,7 @@ export async function download(req: any, res: any) {
       contentType = "text/csv";
     } else {
       // Gerar XLSX
-      fileData = joinToXLSX(filteredBuyersData, filePath);
+      fileData = joinToXLSX(filteredBuyersData);
       contentType =
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
     }
@@ -67,13 +67,12 @@ export async function download(req: any, res: any) {
 
     const { data, error } = await fileBucket.upload(filePath, fileData, {
       contentType,
+      cacheControl: "3600",
     });
 
     if (error) {
       throw new Error(error.message);
     }
-
-    console.log({ data });
 
     const { data: publicURL } = fileBucket.getPublicUrl(filePath);
 
@@ -134,8 +133,8 @@ export function jsonToCSV(jsonData: any[]): string {
   return `${headers.join(",")}\n${rows}`;
 }
 
-export function joinToXLSX(jsonData: any[], filePath: string) {
-  if (jsonData.length === 0) return "";
+export function joinToXLSX(jsonData: any[]): Buffer {
+  if (jsonData.length === 0) return Buffer.from("");
 
   const ws = XLSX.utils.json_to_sheet(
     jsonData.map((buyer) => ({
@@ -162,7 +161,7 @@ export function joinToXLSX(jsonData: any[], filePath: string) {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-  XLSX.writeFile(wb, filePath);
 
-  return filePath; // Retorna o caminho do arquivo gerado
+  // Gera o arquivo XLSX em Buffer para upload
+  return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }
