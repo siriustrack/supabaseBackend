@@ -5,7 +5,9 @@ import * as XLSX from "xlsx";
 export async function download(req: any, res: any) {
   try {
     const { filteredBuyersData } = await abstraction({ req });
+    console.log("filteredBuyersData count:", filteredBuyersData.length);
     const exportCsv = req.query.exportCsv === "true"; // Converte exportCsv para booleano
+    console.log("exportCsv value:", exportCsv);
 
     let allTransactions = 0;
     let allSpend = 0.0;
@@ -30,6 +32,7 @@ export async function download(req: any, res: any) {
     let contentType;
 
     if (exportCsv) {
+      console.log("Generating CSV");
       // Gerar CSV
       fileData = jsonToCSV(
         filteredBuyersData.map((buyer) => ({
@@ -58,6 +61,7 @@ export async function download(req: any, res: any) {
       contentType = "text/csv";
     } else {
       // Gerar XLSX
+      console.log("Generating XLSX");
       fileData = joinToXLSX(filteredBuyersData);
       contentType =
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -65,7 +69,7 @@ export async function download(req: any, res: any) {
 
     const fileBucket = supabase.storage.from("files");
 
-    const { data, error } = await fileBucket.upload(filePath, fileData, {
+    const { error } = await fileBucket.upload(filePath, fileData, {
       contentType,
       cacheControl: "3600",
     });
@@ -95,6 +99,7 @@ export async function download(req: any, res: any) {
 
 export function jsonToCSV(jsonData: any[]): string {
   if (jsonData.length === 0) return "";
+  console.log("Processing CSV with data count:", jsonData.length);
 
   const headers = [
     "Nome",
@@ -134,6 +139,7 @@ export function jsonToCSV(jsonData: any[]): string {
 }
 
 export function joinToXLSX(jsonData: any[]): Buffer {
+  console.log("Processing XLSX with data count:", jsonData.length);
   if (jsonData.length === 0) return Buffer.from("");
 
   const ws = XLSX.utils.json_to_sheet(
