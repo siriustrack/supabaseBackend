@@ -32,8 +32,9 @@ export async function download(req: any, res: any) {
         totalTransactions: buyer.totalTransactions,
         daysInTheBusiness: buyer.daysInTheBusiness,
         daysWithoutBuy: buyer.daysWithoutBuy,
-        averageDaysBetweenPurchases:
-          buyer.averageDaysBetweenPurchases.toFixed(0),
+        averageDaysBetweenPurchases: (
+          buyer.averageDaysBetweenPurchases ?? 0
+        ).toFixed(0),
         averageTicket: buyer.averageTicket.toFixed(2),
         productList: buyer.shopList.map((item) => item.productName).join(" | "),
         allEmails: buyer.allEmails?.join(" | "),
