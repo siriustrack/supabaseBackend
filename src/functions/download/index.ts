@@ -1,9 +1,12 @@
 import { supabase } from "../../config/supabaseClient";
 import { abstraction } from "../abstractionBuyer";
+import * as XLSX from "xlsx";
+import fs from "fs";
 
 export async function download(req: any, res: any) {
   try {
     const { filteredBuyersData } = await abstraction({ req });
+    const { exportCsv } = req.query; // Recebe o parâmetro exportCsv (yes/no)
 
     let allTransactions = 0;
     let allSpend = 0.0;
@@ -12,7 +15,6 @@ export async function download(req: any, res: any) {
 
     for (const buyer of filteredBuyersData) {
       allTransactions += buyer.totalTransactions;
-
       allSpend += buyer.totalSpend;
 
       if (buyer.firstBuy) {
@@ -21,42 +23,50 @@ export async function download(req: any, res: any) {
       }
     }
 
-    const csvData = jsonToCSV(
-      filteredBuyersData.map((buyer) => ({
-        buyerName: buyer.buyerName,
-        buyerEmail: buyer.buyerEmail,
-        pais: buyer.pais,
-        telefone: buyer.telefone,
-        doc: buyer.buyerDocument,
-        totalSpend: buyer.totalSpend.toFixed(2),
-        totalTransactions: buyer.totalTransactions,
-        daysInTheBusiness: buyer.daysInTheBusiness,
-        daysWithoutBuy: buyer.daysWithoutBuy,
-        averageDaysBetweenPurchases: (
-          buyer.averageDaysBetweenPurchases ?? 0
-        ).toFixed(0),
-        averageTicket: buyer.averageTicket.toFixed(2),
-        productList: buyer.shopList.map((item) => item.productName).join(" | "),
-        allEmails: buyer.allEmails?.join(" | "),
-        allPhones: buyer.allPhones?.join(" | "),
-        allNames: buyer.allNames?.join(" | "),
-        allDocuments: buyer.allDocuments?.join(" | "),
-      }))
-    );
+    // Formata os dados comuns para CSV ou XLSX
+    const formattedData = filteredBuyersData.map((buyer) => ({
+      Nome: buyer.buyerName,
+      Email: buyer.buyerEmail,
+      Pais: buyer.pais,
+      Telefone: buyer.telefone,
+      Documento: buyer.buyerDocument,
+      LTV: (buyer.totalSpend ?? 0).toFixed(2).replace(".", ","),
+      "Total Transacoes": buyer.totalTransactions,
+      "Dias No Negocio": buyer.daysInTheBusiness,
+      "Dias Sem Comprar": buyer.daysWithoutBuy,
+      "Media de Dias Entre Compras": buyer.averageDaysBetweenPurchases,
+      "Ticket Medio": (buyer.averageTicket ?? 0).toFixed(2).replace(".", ","),
+      "Lista de Produtos": buyer.shopList
+        ?.map((item) => item.productName)
+        .join(" | "),
+      "E-mails Associados": buyer.allEmails?.join(" | "),
+      "Telefones Associados": buyer.allPhones?.join(" | "),
+      "Nomes Utilizados": buyer.allNames?.join(" | "),
+      "Documentos Utilizados": buyer.allDocuments?.join(" | "),
+    }));
 
-    const filePath = `SiriusLTV_Compradores_${Date.now()}.csv`;
+    let filePath;
+    if (exportCsv === "yes") {
+      filePath = await saveAsCSV(formattedData);
+    } else {
+      filePath = await saveAsXLSX(formattedData);
+    }
 
     const fileBucket = supabase.storage.from("files");
-
-    const { data, error } = await fileBucket.upload(filePath, csvData, {
-      contentType: "text/csv",
-    });
+    const { data, error } = await fileBucket.upload(
+      filePath,
+      fs.readFileSync(filePath),
+      {
+        contentType:
+          exportCsv === "yes"
+            ? "text/csv"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }
+    );
 
     if (error) {
       throw new Error(error.message);
     }
-
-    console.log({ data });
 
     const { data: publicURL } = fileBucket.getPublicUrl(filePath);
 
@@ -72,17 +82,14 @@ export async function download(req: any, res: any) {
     return res.status(200).json(response);
   } catch (error) {
     console.error("Erro ao processar customerReport:", error);
-
-    // Usando res.json para retornar um erro
     return res.status(500).json({
       error: error.message || "Ocorreu um erro desconhecido",
     });
   }
 }
 
-export function jsonToCSV(jsonData: any[]): string {
-  if (jsonData.length === 0) return "";
-
+// Função para salvar como CSV
+async function saveAsCSV(jsonData) {
   const headers = [
     "Nome",
     "Email",
@@ -117,5 +124,18 @@ export function jsonToCSV(jsonData: any[]): string {
     .join("\n");
 
   const response = `${headers.join(",")}\n${rows}`;
-  return `${headers.join(",")}\n${rows}`;
+  const filePath = `/mnt/data/SiriusLTV_Compradores_${Date.now()}.csv`;
+  fs.writeFileSync(filePath, response);
+  return filePath;
+}
+
+// Função para salvar como XLSX
+async function saveAsXLSX(jsonData) {
+  const ws = XLSX.utils.json_to_sheet(jsonData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+  const filePath = `/mnt/data/SiriusLTV_Compradores_${Date.now()}.xlsx`;
+  XLSX.writeFile(wb, filePath);
+  return filePath;
 }
