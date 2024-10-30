@@ -118,7 +118,7 @@ export async function abstraction({
           result: result,
         };
 
-        const cacheDuration = 30 * 24 * 60 * 60; // 30 dias em segundos
+        const cacheDuration = 10 * 60; // 10 minutos em segundos
         await redisClient.set(cacheKey, JSON.stringify(cacheData), {
           EX: cacheDuration,
         });
