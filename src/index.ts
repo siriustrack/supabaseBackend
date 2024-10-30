@@ -19,7 +19,7 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware para parsing do body em JSON
+// Middleware para parsing do body em JSON format
 app.use(express.json());
 
 // Rota principal que aponta para o endpoint abstractionBuyer
