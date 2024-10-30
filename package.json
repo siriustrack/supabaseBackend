@@ -8,7 +8,7 @@
     "start": "node build/index.js",
     "preinstall": "yarn config set enableGlobalCache false",
     "dev": "nodemon --exec ts-node src/index.ts",
-    "clearCache": "node build/src/utils/redisUtils.js"
+    "clearCache": "node build/utils/redisUtils.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^1.29.0",
