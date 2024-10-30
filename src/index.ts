@@ -11,6 +11,7 @@ import { rankingLtvProducts } from "./functions/rankingLtvProducts";
 import { manageOrderBumpIndex } from "./functions/manageOrderBumpIndex";
 import { listProductsFirstBuy } from "./functions/listProductsFirstBuy";
 import { asaasSync } from "./functions/asaasSync";
+import { clearCache } from "./utils/redisUtils";
 
 // Carrega as variáveis de ambiente do arquivo .env
 dotenv.config();
@@ -122,6 +123,7 @@ app.post("/asaasSync", async (req, res) => {
   }
 });
 
+clearCache();
 // Inicia o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);

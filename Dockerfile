@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN yarn install && yarn build && yarn clearCache
+RUN yarn install && yarn build
 
 FROM node:alpine
 
