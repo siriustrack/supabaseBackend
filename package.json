@@ -6,7 +6,9 @@
   "scripts": {
     "build": "yarn tsc",
     "start": "node build/index.js",
-    "preinstall": "yarn config set enableGlobalCache false"
+    "preinstall": "yarn config set enableGlobalCache false",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "clearCache": "ts-node src/utils/redisUtils.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^1.29.0",
@@ -21,6 +23,7 @@
     "@types/express": "^5.0.0",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.7.8",
+    "nodemon": "^3.1.7",
     "typescript": "^4.5.2"
   },
   "engines": {
