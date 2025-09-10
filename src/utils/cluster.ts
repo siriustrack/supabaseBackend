@@ -7,9 +7,12 @@ export async function resolveCustomerCluster(params: {
   lastName?: string | null;
 }): Promise<string | null> {
   const { emailN, phoneN, docN, lastName } = params;
+  
+  console.log("🔍 resolveCustomerCluster chamado com:", { emailN, phoneN, docN, lastName });
 
   // Try SQL function if exists
   try {
+    console.log("🔧 Tentando RPC resolve_customer_cluster...");
     const { data, error } = await supabase.rpc("resolve_customer_cluster", {
       p_email: emailN,
       p_phone: phoneN,
@@ -21,40 +24,55 @@ export async function resolveCustomerCluster(params: {
     });
 
     if (error) {
-      // fallthrough to lookup
-      // console.warn("resolve_customer_cluster RPC error", error);
+      console.log("⚠️ RPC resolve_customer_cluster falhou:", error.message, "- usando fallback");
     } else if (data) {
-      // Supabase RPC returns the value directly as data
+      console.log("✅ RPC retornou cluster:", data);
       return data as unknown as string;
     }
-  } catch {
-    // ignore
+  } catch (rpcErr) {
+    console.log("⚠️ RPC resolve_customer_cluster erro:", rpcErr, "- usando fallback");
   }
 
   // Fallback: look for any key in customer_cluster_keys
   try {
+    console.log("🔄 Usando fallback: buscar/criar clusters nas tabelas...");
+    
     const filters: { key_type: "email" | "phone" | "document"; key_value: string }[] = [];
     if (emailN) filters.push({ key_type: "email", key_value: emailN });
     if (phoneN) filters.push({ key_type: "phone", key_value: phoneN });
     if (docN) filters.push({ key_type: "document", key_value: docN });
 
-    if (!filters.length) return null;
+    if (!filters.length) {
+      console.log("❌ Nenhuma chave válida para buscar cluster");
+      return null;
+    }
 
     // 1) Buscar clusters existentes para qualquer uma das chaves
+    console.log("🔎 Buscando clusters existentes para", filters.length, "chaves");
     const clusterIds = new Set<string>();
     for (const f of filters) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("customer_cluster_keys")
         .select("cluster_id")
         .eq("key_type", f.key_type)
         .eq("key_value", f.key_value);
-      (data || []).forEach((r: any) => clusterIds.add(r.cluster_id));
+      
+      if (error) {
+        console.error("❌ Erro ao buscar cluster_keys:", error);
+        continue;
+      }
+      
+      (data || []).forEach((r: any) => {
+        console.log(`🔗 Encontrado cluster ${r.cluster_id} para ${f.key_type}=${f.key_value}`);
+        clusterIds.add(r.cluster_id);
+      });
     }
 
     let targetCluster: string | null = null;
 
     if (clusterIds.size === 0) {
       // 2) Nenhum cluster: criar novo
+      console.log("🆕 Nenhum cluster encontrado, criando novo...");
       const { data: created, error: createErr } = await supabase
         .from("customer_cluster")
         .insert([
@@ -67,8 +85,12 @@ export async function resolveCustomerCluster(params: {
         ])
         .select("cluster_id")
         .single();
-      if (createErr || !created) return null;
+      if (createErr || !created) {
+        console.error("❌ Erro ao criar cluster:", createErr);
+        return null;
+      }
       targetCluster = (created as any).cluster_id as string;
+      console.log("✅ Cluster criado:", targetCluster);
 
       // Upsert chaves para o cluster
       const keysToUpsert = filters.map((f) => ({
@@ -76,9 +98,15 @@ export async function resolveCustomerCluster(params: {
         key_value: f.key_value,
         cluster_id: targetCluster!,
       }));
-      await supabase
+      console.log("🔑 Inserindo", keysToUpsert.length, "chaves para o cluster");
+      const { error: keysErr } = await supabase
         .from("customer_cluster_keys")
         .upsert(keysToUpsert, { onConflict: "key_type,key_value" });
+      if (keysErr) {
+        console.error("❌ Erro ao inserir chaves:", keysErr);
+      } else {
+        console.log("✅ Chaves inseridas com sucesso");
+      }
     } else {
       // 3) Existe(m) cluster(s): escolher determinístico e, se necessário, merge
       const ids = Array.from(clusterIds).sort();
@@ -117,7 +145,8 @@ export async function resolveCustomerCluster(params: {
     }
 
     return targetCluster;
-  } catch {
+  } catch (fallbackErr) {
+    console.error("❌ Erro no fallback de cluster:", fallbackErr);
     return null;
   }
 }

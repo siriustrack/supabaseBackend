@@ -111,10 +111,13 @@ export async function uploadSalesCSV(req: any, res: any) {
 
     // Dispara replicação para v2 com prefixo 'test-' no project_id, sem impactar a resposta v1
     try {
+      console.log("🔄 Iniciando replicação v2 para", csvChunk.length, "registros");
       const replicated = csvChunk.map((r: any) => ({
         ...r,
         project_id: typeof r.project_id === "string" ? `test-${r.project_id}` : r.project_id,
       }));
+
+      console.log("📊 Primeiro registro replicado:", JSON.stringify(replicated[0], null, 2));
 
       const v2Req = {
         method: "POST",
@@ -122,9 +125,13 @@ export async function uploadSalesCSV(req: any, res: any) {
       } as any;
 
       // execução em background (não aguarda)
-      void uploadSalesCSVV2(v2Req, null);
+      console.log("🚀 Disparando uploadSalesCSVV2...");
+      void uploadSalesCSVV2(v2Req, null).catch(err => {
+        console.error("❌ Erro na replicação v2:", err);
+      });
+      console.log("✅ Replicação v2 disparada");
     } catch (repErr) {
-      console.error("Falha ao disparar replicação v2 (não bloqueante):", repErr);
+      console.error("❌ Falha ao disparar replicação v2 (não bloqueante):", repErr);
     }
 
     return new Response(
