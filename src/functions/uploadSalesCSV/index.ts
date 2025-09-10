@@ -1,6 +1,6 @@
 import { supabase } from "../../config/supabaseClient";
-import { DateTime } from "luxon";
 import { RowData } from "../../models/RowData";
+import { uploadSalesCSVV2 } from "../uploadSalesCSVV2";
 
 const DATABASE = "omni_sales";
 
@@ -66,12 +66,10 @@ export async function uploadSalesCSV(req: any, res: any) {
         id: crypto.randomUUID(),
         transaction_code: row.transaction_code,
         transaction_status: row.transaction_status,
-        transaction_date: DateTime.fromFormat(
-          row.transaction_date,
-          "yyyy-MM-dd"
-        ).isValid
-          ? DateTime.fromFormat(row.transaction_date, "yyyy-MM-dd").toISODate()
-          : null,
+        transaction_date:
+          typeof row.transaction_date === "string" && /^(\d{4})-(\d{2})-(\d{2})$/.test(row.transaction_date)
+            ? row.transaction_date
+            : null,
         producer: row.producer,
         product_id: row.product_id,
         product_name: row.product_name,
@@ -110,6 +108,24 @@ export async function uploadSalesCSV(req: any, res: any) {
     await insertData(batchedRows);
 
     console.log("Returning success response.");
+
+    // Dispara replicação para v2 com prefixo 'test-' no project_id, sem impactar a resposta v1
+    try {
+      const replicated = csvChunk.map((r: any) => ({
+        ...r,
+        project_id: typeof r.project_id === "string" ? `test-${r.project_id}` : r.project_id,
+      }));
+
+      const v2Req = {
+        method: "POST",
+        json: async () => replicated,
+      } as any;
+
+      // execução em background (não aguarda)
+      void uploadSalesCSVV2(v2Req, null);
+    } catch (repErr) {
+      console.error("Falha ao disparar replicação v2 (não bloqueante):", repErr);
+    }
 
     return new Response(
       JSON.stringify({ message: "Dados inseridos com sucesso" }),
