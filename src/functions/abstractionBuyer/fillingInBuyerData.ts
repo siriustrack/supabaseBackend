@@ -64,6 +64,34 @@ function removeLeadingZeros(document: string): string {
   return document.replace(/^0+/, "");
 }
 
+const isChildTransaction = (item: ShopItem): boolean =>
+  item.bumpType === "Child" || item.bumpIndex === "Child";
+
+const compareShopItems = (a: ShopItem, b: ShopItem): number => {
+  const dateA = new Date(a.date);
+  const dateB = new Date(b.date);
+
+  const dayA = dateA.toISOString().slice(0, 10);
+  const dayB = dateB.toISOString().slice(0, 10);
+
+  if (dayA !== dayB) {
+    return dateA.getTime() - dateB.getTime();
+  }
+
+  const childA = isChildTransaction(a);
+  const childB = isChildTransaction(b);
+
+  if (childA !== childB) {
+    return childA ? 1 : -1;
+  }
+
+  return dateA.getTime() - dateB.getTime();
+};
+
+const sortShopList = (shopList: ShopItem[]): void => {
+  shopList.sort(compareShopItems);
+};
+
 export const fillingInBuyerData = ({
   specifiedData,
   buyersData,
@@ -451,9 +479,7 @@ function validateItemsHasToRemove({
 
 function calculateBuyerMetrics(buyersData: { [email: string]: BuyerData }) {
   for (const buyer of Object.values(buyersData)) {
-    buyer.shopList.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+    sortShopList(buyer.shopList);
 
     const firstValidIndex = buyer.shopList.findIndex(
       (item) => item.bumpType !== "Child" || item.bumpIndex !== "Child"
@@ -648,9 +674,7 @@ function aggregateByDocument(buyersData: { [email: string]: BuyerData }) {
         ...buyer.shopList,
       ];
 
-      mergedBuyersData[buyerDocument].shopList.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
+      sortShopList(mergedBuyersData[buyerDocument].shopList);
 
       // Garantir que a primeira transação não seja `orderBump` ou `index = Child`
       const firstValidIndex = mergedBuyersData[
@@ -669,9 +693,7 @@ function aggregateByDocument(buyersData: { [email: string]: BuyerData }) {
 
       // Recalcular firstBuy e lastBuy
       const allTransactions = mergedBuyersData[buyerDocument].shopList;
-      allTransactions.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
+      sortShopList(allTransactions);
 
       mergedBuyersData[buyerDocument].firstBuy = allTransactions[0];
       mergedBuyersData[buyerDocument].firstBuyDate = new Date(
@@ -748,9 +770,7 @@ function aggregateByPhone(buyersData: { [email: string]: BuyerData }) {
         ...buyer.shopList,
       ];
 
-      mergedBuyersData[buyerPhone].shopList.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
+      sortShopList(mergedBuyersData[buyerPhone].shopList);
 
       // Garantir que a primeira transação não seja `orderBump` ou `index = Child`
       const firstValidIndex = mergedBuyersData[buyerPhone].shopList.findIndex(
@@ -767,9 +787,7 @@ function aggregateByPhone(buyersData: { [email: string]: BuyerData }) {
 
       // Recalcular firstBuy e lastBuy
       const allTransactions = mergedBuyersData[buyerPhone].shopList;
-      allTransactions.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
+      sortShopList(allTransactions);
 
       mergedBuyersData[buyerPhone].firstBuy = allTransactions[0];
       mergedBuyersData[buyerPhone].firstBuyDate = new Date(
